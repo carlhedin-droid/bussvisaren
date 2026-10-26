@@ -180,7 +180,8 @@ footer a{color:inherit}
   }
   async function departures(id){
     let j = {departures:[]};
-    for(let i=0; i<3; i++){            // SL svarar ibland tomt; fråga igen
+    for(let i=0; i<5; i++){            // SL svarar ibland tomt; fråga igen efter en kort paus
+      if(i) await new Promise(r => setTimeout(r, 600));
       const r = await fetch(API + id + "/departures?forecast=" + FORECAST_MIN, {cache:"no-store"});
       if(!r.ok) throw new Error("SL svarade " + r.status);
       j = await r.json();
@@ -247,7 +248,7 @@ footer a{color:inherit}
       return f.l === d.l && diff >= 0 && diff <= 6*60000;
     });
 
-    if(cfg.reachMin && L && L.d[0] && !L.d[0].err){
+    if(cfg.reachMin && L && L.d[0] && !L.d[0].err && L.d[0].tot !== 0){
       const P = firstDeps.find(d => reachState(d, cfg.reachMin).k !== "miss");
       const res = L.d[0].dep.filter(cfg.keepReserve).filter(upcoming);
       const R = res.find(d => reachState(d, cfg.reachMin).k !== "miss" && (!P || new Date(P.e) - new Date(d.e) >= 10*60000));
@@ -271,6 +272,7 @@ footer a{color:inherit}
 
       if(!data){ sec.appendChild(el("div", "empty", "Hämtar…")); board.appendChild(sec); return; }
       if(data.err){ sec.appendChild(el("div", "empty", "SL svarade inte för den här hållplatsen.")); board.appendChild(sec); return; }
+      if(data.tot === 0){ sec.appendChild(el("div", "empty", "SL svarar tomt för " + (isReserve ? "Brommaplan" : s.n) + " just nu. Tryck Uppdatera om en stund.")); board.appendChild(sec); return; }
 
       if(isReserve){
         const nextGood = firstDeps[0] || null;
