@@ -141,7 +141,9 @@ footer a{color:inherit}
       keep: d => d.l === "309" || d.l === "311" || (d.l === "177" && !/mörby/i.test(d.t)),
       keepReserve: d => (d.l === "176" || d.l === "302") && !/mörby|brommaplan/i.test(d.t),
       alight: {"176": "Kliv av vid Ekvägen", "302": "Kliv av vid Träkvista idrottsplats"},
-      reachMin: 5, reachFrom: "Åkeshov",
+      // Utgångspunkt: man står vid tunnelbanedörren när tåget rullar in på Brommaplan.
+      // Springa till bussen tar ca 2 min, gå ca dubbelt så lång tid.
+      reachMin: 2,
       emptyText: "Inga avgångar med 309, 311 eller 177 de närmaste " + FORECAST_MIN + " minuterna."
     }
   };
@@ -229,8 +231,8 @@ footer a{color:inherit}
 
   // ---------- Rendera ----------
   function reachState(d, reach){
-    const mg = (new Date(d.e) - Date.now())/60000 - reach;
-    return mg >= 2 ? {k:"walk", txt:"Hinner gå"} : mg >= 0 ? {k:"run", txt:"Spring"} : {k:"miss", txt:"Hinner inte"};
+    const mg = (new Date(d.e) - Date.now())/60000;
+    return mg >= reach*2 ? {k:"walk", txt:"Hinner gå"} : mg >= reach ? {k:"run", txt:"Spring"} : {k:"miss", txt:"Hinner inte"};
   }
 
   function render(){
@@ -254,9 +256,9 @@ footer a{color:inherit}
       const R = res.find(d => reachState(d, cfg.reachMin).k !== "miss" && (!P || new Date(P.e) - new Date(d.e) >= 10*60000));
       const st = P ? reachState(P, cfg.reachMin).k : null;
       const box = el("div", "reco" + (st === "run" ? " run" : !P ? " none" : ""));
-      box.append(el("p", "reco-label", "Om du är vid " + cfg.reachFrom + " nu"));
+      box.append(el("p", "reco-label", "När tåget rullar in på Brommaplan"));
       box.append(el("p", "reco-main", P
-        ? (st === "run" ? "🏃 Spring till " : "🚶 Ta ") + P.l + " kl " + hm(new Date(P.e)) + (st === "run" ? " – under 2 min marginal" : " – du hinner gå")
+        ? (st === "run" ? "🏃 Spring till " : "🚶 Ta ") + P.l + " kl " + hm(new Date(P.e)) + (st === "run" ? " – den hinns bara om du springer" : " – du hinner gå")
         : "Ingen 309, 311 eller 177 som du hinner den närmaste timmen"));
       if(R) box.append(el("p", "reco-sub", "🔁 Tidigare: " + R.l + " kl " + hm(new Date(R.e)) + " – " + cfg.alight[R.l].toLowerCase() + (reachState(R, cfg.reachMin).k === "run" ? " (spring)" : "")));
       board.appendChild(box);
