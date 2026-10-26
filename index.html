@@ -130,7 +130,8 @@ footer a{color:inherit}
     ut: {
       eyebrow: "Bussar mot", heading: "Brommaplan",
       stops: [{n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}],
-      keep: d => /brommaplan/i.test(d.t),
+      // Slutstation Brommaplan (309, 311), eller 176/177 mot Mörby station, som går via Brommaplan.
+      keep: d => /brommaplan/i.test(d.t) || ((d.l === "177" || d.l === "176") && /mörby/i.test(d.t)),
       dedupe: true,
       emptyText: "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."
     },
@@ -310,6 +311,7 @@ footer a{color:inherit}
     const dm = el("div", "dest-meta");
     if(rs) dm.appendChild(el("span", "chip " + rs.k, rs.txt));
     if(alight) dm.appendChild(el("span", "", alight));
+    if(!/brommaplan/i.test(d.t) && /mörby/i.test(d.t) && tab === "ut") dm.appendChild(el("span", "", "Via Brommaplan"));
     if(d.sp) dm.appendChild(el("span", "", "Läge " + d.sp));
     const delay = (d.e && d.p) ? Math.round((new Date(d.e) - new Date(d.p))/60000) : 0;
     if(delay >= 2) dm.appendChild(el("span", "late", "+" + delay + " min sen"));
