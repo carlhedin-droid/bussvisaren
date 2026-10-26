@@ -1,4 +1,4 @@
-# Avgångar Sandudden
+# Bussvisaren
 
 Avgångstavla för bussarna mellan Sandudden/Träkvista (Ekerö) och Brommaplan.
 
