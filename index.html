@@ -277,7 +277,7 @@ footer a{color:inherit}
       if(data.tot === 0){ sec.appendChild(el("div", "empty", "SL svarar tomt för " + (isReserve ? "Brommaplan" : s.n) + " just nu. Tryck Uppdatera om en stund.")); board.appendChild(sec); return; }
 
       if(isReserve){
-        const nextGood = firstDeps[0] || null;
+        const nextGood = firstDeps.find(d => !cfg.reachMin || reachState(d, cfg.reachMin).k !== "miss") || null;
         const res = data.dep.filter(cfg.keepReserve).filter(upcoming);
         const before = (nextGood ? res.filter(d => new Date(d.e) < new Date(nextGood.e)) : res).slice(0,4);
         if(!before.length) sec.appendChild(el("div", "empty", nextGood ? "Ingen reservlinje går före nästa ordinarie buss (" + nextGood.l + " kl " + hm(new Date(nextGood.e)) + ")." : "Inga reservlinjer de närmaste " + FORECAST_MIN + " minuterna."));
