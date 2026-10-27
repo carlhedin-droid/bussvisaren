@@ -79,13 +79,6 @@ ol.deps{list-style:none;margin:0;padding:0}
 .now{display:inline-block;background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:2px 8px 0;font-size:1rem}
 .empty{padding:16px;color:var(--muted)}
 .devs{padding:10px 16px;border-top:1px solid var(--line);font-size:.875rem;color:var(--muted)}
-.reco{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
-.reco.run{border-left-color:var(--accent)}
-.reco.none{border-left-color:var(--late)}
-.reco p{margin:0}
-.reco-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
-.reco-main{font-weight:800;font-size:1.25rem;line-height:1.2}
-.reco-sub{color:var(--muted);font-size:.875rem}
 footer{color:var(--muted);font-size:.8125rem;text-align:center}
 footer a{color:inherit}
 </style>
@@ -250,20 +243,6 @@ footer a{color:inherit}
       const diff = new Date(d.e) - new Date(f.e);
       return f.l === d.l && diff >= 0 && diff <= 6*60000;
     });
-
-    if(cfg.reachMin && L && L.d[0] && !L.d[0].err && L.d[0].tot !== 0){
-      const P = firstDeps.find(d => reachState(d, cfg.reachMin).k !== "miss");
-      const res = L.d[0].dep.filter(cfg.keepReserve).filter(upcoming);
-      const R = res.find(d => reachState(d, cfg.reachMin).k !== "miss" && (!P || new Date(P.e) - new Date(d.e) >= 10*60000));
-      const st = P ? reachState(P, cfg.reachMin).k : null;
-      const box = el("div", "reco" + (st === "run" ? " run" : !P ? " none" : ""));
-      box.append(el("p", "reco-label", "När tåget rullar in på Brommaplan"));
-      box.append(el("p", "reco-main", P
-        ? (st === "run" ? "🏃 Spring till " : "🚶 Ta ") + P.l + " kl " + hm(new Date(P.e)) + (st === "run" ? " – den hinns bara om du springer" : " – du hinner gå")
-        : "Ingen 309, 311 eller 177 som du hinner den närmaste timmen"));
-      if(R) box.append(el("p", "reco-sub", "🔁 Tidigare: " + R.l + " kl " + hm(new Date(R.e)) + " – " + cfg.alight[R.l].toLowerCase() + (reachState(R, cfg.reachMin).k === "run" ? " (spring)" : "")));
-      board.appendChild(box);
-    }
 
     cfg.stops.forEach((s, idx) => {
       const isReserve = s.reserveOf !== undefined;
