@@ -1,11 +1,16 @@
 # Bussvisaren
 
-Avgångstavla för bussarna mellan Sandudden/Träkvista (Ekerö) och Brommaplan.
+Avgångstavla för bussarna mellan hållplatserna kring Sandudden/Träkvista (Ekerö) och Brommaplan. Kan delas med grannar – var och en väljer sina hållplatser.
 
-- **Till Brommaplan:** Sanduddens vägskäl och Träkvista. Bussar med slutstation Brommaplan (309, 311) samt 176/177 mot Mörby station, som går via Brommaplan.
-- **Hem:** från Brommaplan med 309, 311 och 177, plus reservlinjerna 176 (Ekvägen) och 302 (Träkvista idrottsplats). Markeringarna "Hinner gå / Spring / Hinner inte" utgår från att man står vid tunnelbanedörren när tåget rullar in på Brommaplan: springa till bussen tar ca 2 min, gå ca 4 min.
+- **Till Brommaplan:** avgångar från ens utresehållplatser i prioritetsordning. Bussar som har Brommaplan som slutstation eller går via Brommaplan (samma tur avgår senare därifrån) visas. En buss som stannar vid flera hållplatser visas bara vid den första.
+- **Hem från Brommaplan:** bussar som stannar vid någon av ens hemresehållplatser. Bussen visas med den första hållplatsen i prioritetsordning som den passerar, och ankomsttiden dit. Hållplatser markerade som reserv visas under "Reservalternativ". Vilka linjer som gäller räknas ut från SL:s realtidsdata (samma linje och tur-id vid Brommaplan och vid hållplatsen); restiderna lärs in för turer som ligger för långt fram.
+- **Hinner gå / Spring / Hinner inte:** utgår från gångtiden från tunnelbanan till bussen på Brommaplan (inställning, förval 4 min; springa = halva tiden).
+- **Skjuts:** tryck på Skjuts vid en avgång hem. WhatsApp öppnas med ett färdigt meddelande med linje, avgångstid och upphämtningstid vid hållplatsen man kliver av vid.
+- **Inställningar (⚙️):** hållplatser för utresa och hemresa i prioritetsordning, reservhållplatser, gångtid, namn och WhatsApp-nummer. Allt sparas bara i telefonen.
+- **Dela:** knappen i inställningarna skapar en länk (`?s=…`) med samma hållplatser och gångtid, men utan namn och nummer.
+- **Självuppdatering:** sidan laddar om sig själv när en ny version har publicerats.
 
-- **Skjuts:** på fliken Hem trycker man på en avgång och sedan på "Be om skjuts i WhatsApp". WhatsApp öppnas med ett färdigt meddelande till den som hämtar: linje, avgångstid och upphämtningstid vid Träkvista (309, 311, 177), Ekvägen (176) eller Träkvista idrottsplats (302). Upphämtningstiden är SL:s realtid för samma tur vid den hållplatsen; finns den inte uppskattas 13 min. Vem man är och mottagarens nummer väljs en gång och sparas bara i telefonen.
+Förval: utresa Sanduddens vägskäl, Träkvista, Träkvista idrottsplats; hemresa samma tre plus Ekvägen som reserv. SL-id: Sandudden 3080, Sanduddens vägskäl 3081, Träkvista 3065, Träkvista idrottsplats 3069, Ekvägen 3047, Brommaplan 9109.
 
 Data i realtid från SL:s öppna API (SL Transport, via Trafiklab). Ingen nyckel krävs.
 Publiceras med GitHub Pages från grenen `main`.

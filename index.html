@@ -89,17 +89,12 @@ footer a{color:inherit}
 .dep.pick{grid-template-columns:3.25rem minmax(0,1fr) auto auto}
 .ride-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:3.25rem;padding:5px 6px 3px;border-radius:8px;border:1px solid #25D366;color:var(--ink);font-size:.6875rem;font-weight:700;line-height:1.1}
 .ride-btn span{font-size:1.125rem;line-height:1}
-dialog#ride{border:0;padding:0;background:transparent;color:var(--ink);width:100%;max-width:640px;margin:auto auto 0;max-height:90vh}
-dialog#ride::backdrop{background:rgba(0,0,0,.45)}
 .sheet{background:var(--surface);border-radius:16px 16px 0 0;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
 .sheet h2{margin:0;font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px}
 .sheet h2 .badge{padding:3px 8px 1px}
 .sheet p{margin:0}
 .ride-time{font-family:var(--f-mono);font-weight:700}
 .sheet-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:6px}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--tab-bg);border-radius:10px;padding:4px}
-.seg button{font:inherit;font-weight:600;border:0;border-radius:7px;padding:8px;background:transparent;color:var(--muted);cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .sheet input{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 button.wa{background:#25D366;color:#0B2E17}
 .sheet-actions{display:flex;gap:8px}
@@ -107,6 +102,31 @@ button.wa{background:#25D366;color:#0B2E17}
 .sheet-actions #rideCancel{flex:0 0 auto;padding:12px 18px}
 button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;border:0;border-radius:8px;cursor:pointer}
 .linkbtn{font:inherit;font-size:.875rem;color:var(--muted);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer;align-self:flex-start}
+.tabs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.tab{min-width:0}
+.tab small{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stoplist .ib{font-size:.875rem}
+dialog.sheetdlg{border:0;padding:0;background:transparent;color:var(--ink);width:100%;max-width:640px;margin:auto auto 0;max-height:92vh}
+dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
+#settings .sheet{max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.set-sec{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.set-help{color:var(--muted);font-size:.8125rem}
+.stoplist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.stoplist li{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.stoplist li.res{border-style:dashed}
+.stoplist .num{font-family:var(--f-mono);font-weight:700;color:var(--muted);width:1.25rem;text-align:center}
+.stoplist .nm{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stoplist .nm small{display:block;font-weight:400;color:var(--muted);font-size:.75rem}
+.ib{font:inherit;min-width:32px;height:32px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;padding:0 6px}
+.ib.on{background:var(--muted);color:var(--surface);border-color:var(--muted)}
+.ib:disabled{opacity:.35}
+.hits{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.hits button{font:inherit;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;cursor:pointer;color:var(--ink)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.set-err{color:var(--late);font-weight:600}
+.set-ok{color:var(--ok);font-weight:600}
+.sheet input[type=number]{width:6rem}
+.arr{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -120,7 +140,7 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
   </header>
 
   <div class="tabs" role="tablist" aria-label="Riktning">
-    <button class="tab" role="tab" id="tab-ut" data-key="ut" type="button">Till Brommaplan<small>Vägskälet · Träkvista</small></button>
+    <button class="tab" role="tab" id="tab-ut" data-key="ut" type="button">Till Brommaplan<small id="utSub"></small></button>
     <button class="tab" role="tab" id="tab-hem" data-key="hem" type="button">Hem<small>Från Brommaplan</small></button>
   </div>
 
@@ -129,6 +149,7 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     <span id="statusText">Hämtar…</span>
     <span class="spacer"></span>
     <button class="act" id="refreshBtn" type="button">Uppdatera</button>
+    <button class="act" id="settingsBtn" type="button" aria-label="Inställningar">⚙️</button>
   </div>
 
   <p class="notice" id="notice" hidden></p>
@@ -138,23 +159,71 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
   <footer>Realtid från SL via <a href="https://www.trafiklab.se/" target="_blank" rel="noopener">Trafiklab</a>. Uppdateras varje minut medan sidan är öppen.</footer>
 </div>
 
-<dialog id="ride" aria-labelledby="rideTitle">
+<dialog id="ride" class="sheetdlg" aria-labelledby="rideTitle">
   <div class="sheet">
     <h2 id="rideTitle"></h2>
     <p id="rideInfo"></p>
     <div id="rideSetup" hidden>
-      <span class="sheet-label">Vem är du? (sparas i den här telefonen)</span>
-      <div class="seg" id="rideWho">
-        <button type="button" data-who="Calle" aria-pressed="false">Calle</button>
-        <button type="button" data-who="Sara" aria-pressed="false">Sara</button>
+      <div class="row2">
+        <div><label class="sheet-label" for="rideMe">Ditt namn</label><input id="rideMe" autocomplete="given-name" placeholder="T.ex. Calle"></div>
+        <div><label class="sheet-label" for="rideTo">Den som hämtar</label><input id="rideTo" autocomplete="off" placeholder="T.ex. Sara"></div>
       </div>
-      <label class="sheet-label" for="ridePhone" id="ridePhoneLabel" style="margin-top:12px">WhatsApp-nummer till den som hämtar</label>
+      <label class="sheet-label" for="ridePhone" style="margin-top:12px">WhatsApp-nummer till den som hämtar</label>
       <input id="ridePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="07x-xxx xx xx (valfritt)">
-</div>
+    </div>
     <button type="button" class="linkbtn" id="rideEdit" hidden></button>
     <div class="sheet-actions">
       <button type="button" class="act" id="rideCancel">Avbryt</button>
       <button type="button" class="primary wa" id="rideSend">💬 Be om skjuts i WhatsApp</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="settings" class="sheetdlg" aria-labelledby="setTitle">
+  <div class="sheet">
+    <h2 id="setTitle">Inställningar</h2>
+    <p class="set-help">Sparas bara i den här telefonen.</p>
+
+    <section class="set-sec">
+      <span class="sheet-label">Utresa – hållplatser du åker från</span>
+      <p class="set-help">I prioritetsordning. En buss som stannar vid flera visas bara vid den första.</p>
+      <ol class="stoplist" id="setUt"></ol>
+      <div><input id="addUt" type="search" placeholder="Lägg till hållplats…" autocomplete="off"><ul class="hits" id="hitsUt"></ul></div>
+    </section>
+
+    <section class="set-sec">
+      <span class="sheet-label">Hemresa – hållplatser du kan kliva av vid</span>
+      <p class="set-help">I prioritetsordning. Bussen visas med den första hållplatsen den stannar vid. Markera <b>Reserv</b> för hållplatser som bara ska visas som reservalternativ.</p>
+      <ol class="stoplist" id="setHem"></ol>
+      <div><input id="addHem" type="search" placeholder="Lägg till hållplats…" autocomplete="off"><ul class="hits" id="hitsHem"></ul></div>
+    </section>
+
+    <section class="set-sec">
+      <label class="sheet-label" for="setWalk">Gångtid till bussen på Brommaplan</label>
+      <p class="set-help"><input id="setWalk" type="number" min="0" max="20" step="1" inputmode="numeric"> minuter från tunnelbanan. Springer man tar det halva tiden.</p>
+    </section>
+
+    <section class="set-sec">
+      <span class="sheet-label">Skjuts</span>
+      <div class="row2">
+        <div><label class="sheet-label" for="setMe">Ditt namn</label><input id="setMe" autocomplete="given-name"></div>
+        <div><label class="sheet-label" for="setTo">Den som hämtar</label><input id="setTo" autocomplete="off"></div>
+      </div>
+      <label class="sheet-label" for="setPhone">WhatsApp-nummer till den som hämtar</label>
+      <input id="setPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="07x-xxx xx xx (valfritt)">
+    </section>
+
+    <section class="set-sec">
+      <span class="sheet-label">Dela med en granne</span>
+      <p class="set-help">Skickar en länk som öppnar Bussvisaren med samma hållplatser. Namn och nummer följer inte med.</p>
+      <button type="button" class="act" id="shareBtn">🔗 Dela länk med mina hållplatser</button>
+      <p id="shareMsg" class="set-ok" hidden></p>
+    </section>
+
+    <p id="setErr" class="set-err" hidden></p>
+    <div class="sheet-actions">
+      <button type="button" class="act" id="setCancel">Avbryt</button>
+      <button type="button" class="primary" id="setSave">Spara</button>
     </div>
   </div>
 </dialog>
@@ -165,51 +234,88 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
   const FINDER = "https://journeyplanner.integration.sl.se/v2/stop-finder?type_sf=any&any_obj_filter_sf=2&name_sf=";
   const FORECAST_MIN = 90;
   const REFRESH_MS = 60000;
+  const HUB = {n:"Brommaplan", id:9109};
+  const RIDE_MIN = 13;          // reservgissning för restid Brommaplan → hållplats
 
-  const TABS = {
-    ut: {
-      eyebrow: "Bussar mot", heading: "Brommaplan",
-      stops: [{n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}],
-      // Slutstation Brommaplan (309, 311), eller 176/177 mot Mörby station, som går via Brommaplan.
-      keep: d => /brommaplan/i.test(d.t) || ((d.l === "177" || d.l === "176") && /mörby/i.test(d.t)),
-      dedupe: true,
-      emptyText: "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."
-    },
-    hem: {
-      eyebrow: "Bussar hem från", heading: "Brommaplan",
-      stops: [{n:"Brommaplan", q:"Brommaplan"}, {n:"Reservalternativ", reserveOf:0}],
-      // 177 går åt båda hållen från Brommaplan; bara turerna ut mot Ekerö går via Träkvista.
-      keep: d => d.l === "309" || d.l === "311" || (d.l === "177" && !/mörby/i.test(d.t)),
-      keepReserve: d => (d.l === "176" || d.l === "302") && !/mörby|brommaplan/i.test(d.t),
-      alight: {"176": "Kliv av vid Ekvägen", "302": "Kliv av vid Träkvista idrottsplats"},
-      // Utgångspunkt: man står vid tunnelbanedörren när tåget rullar in på Brommaplan.
-      // Springa till bussen tar ca 2 min, gå ca dubbelt så lång tid.
-      reachMin: 2,
-      // Skjuts: var bussåkaren kliver av, per linje.
-      pickup: {"309":"Träkvista", "311":"Träkvista", "177":"Träkvista", "176":"Ekvägen", "302":"Träkvista idrottsplats"},
-      emptyText: "Inga avgångar med 309, 311 eller 177 de närmaste " + FORECAST_MIN + " minuterna."
-    }
+  // Förval: hållplatserna runt Sandudden/Träkvista. Var och en kan ändra under ⚙️.
+  const DEFAULT = {
+    ut:  [{n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}, {n:"Träkvista idrottsplats", id:3069}],
+    hem: [{n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}, {n:"Träkvista idrottsplats", id:3069}, {n:"Ekvägen", id:3047, r:1}],
+    walk: 4, me: "", to: "", phone: ""
   };
-
-  // Hållplatser där man blir hämtad. Ankomsttiden hämtas live genom att leta upp samma tur där;
-  // annars uppskattas den med RIDE_MIN minuter från Brommaplan.
-  const PICKUP_STOPS = {
-    "Träkvista": {n:"Träkvista", id:3065},
-    "Ekvägen": {n:"Ekvägen", q:"Ekvägen", area:"ekerö"},
-    "Träkvista idrottsplats": {n:"Träkvista idrottsplats", q:"Träkvista idrottsplats", area:"ekerö"}
-  };
-  const RIDE_MIN = 13;
 
   const $ = id => document.getElementById(id);
-  const last = {ut:null, hem:null};
-  let tab = pickTab();
-  let busy = false;
-
+  const store = {
+    get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  };
+  const clone = o => JSON.parse(JSON.stringify(o));
   const pad = x => String(x).padStart(2,"0");
   const hm = d => pad(d.getHours())+":"+pad(d.getMinutes());
   const minutesUntil = iso => { const d = new Date(iso); return isNaN(d) ? null : Math.round((d - Date.now())/60000); };
   const upcoming = d => { const m = minutesUntil(d.e); return m===null || m >= -1; };
-  const store = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
+  const later = (a, b) => new Date(a.e) > new Date(b.e);
+  const sameTrip = (a, b) => a.l === b.l && !!a.j && a.j === b.j;   // tur-id är bara unikt per linje
+
+  // ---------- Inställningar ----------
+  function loadCfg(){
+    let c = null;
+    try{ c = JSON.parse(store.get("bv_cfg")); }catch(e){}
+    if(!c || !Array.isArray(c.ut) || !Array.isArray(c.hem) || !c.ut.length || !c.hem.length){
+      c = clone(DEFAULT);
+      const me = store.get("ride_me");             // från tidigare version
+      if(me){
+        c.me = me; c.to = me === "Calle" ? "Sara" : me === "Sara" ? "Calle" : ""; c.phone = store.get("ride_phone") || "";
+        store.set("bv_cfg", JSON.stringify(c));
+      }
+    }
+    c.walk = Number.isFinite(+c.walk) ? Math.max(0, +c.walk) : DEFAULT.walk;
+    ["me","to","phone"].forEach(k => { if(typeof c[k] !== "string") c[k] = ""; });
+    return c;
+  }
+  let cfg = loadCfg();
+  const saveCfg = () => store.set("bv_cfg", JSON.stringify(cfg));
+
+  const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))));
+  const shareCode = c => b64e(JSON.stringify({u:c.ut.map(s => [s.id, s.n]), h:c.hem.map(s => s.r ? [s.id, s.n, 1] : [s.id, s.n]), w:c.walk}));
+  const shareUrl = c => location.origin + location.pathname + "?s=" + shareCode(c);
+
+  function importFromUrl(){
+    const code = new URLSearchParams(location.search).get("s");
+    if(!code) return;
+    try{
+      const o = JSON.parse(b64d(code));
+      const ok = a => Array.isArray(a) && a.length > 0 && a.length <= 8 && a.every(x => Array.isArray(x) && +x[0] > 0 && typeof x[1] === "string");
+      if(ok(o.u) && ok(o.h) && o.h.some(x => !x[2])){
+        const next = Object.assign(clone(cfg), {
+          ut: o.u.map(x => ({id:+x[0], n:x[1].slice(0,60)})),
+          hem: o.h.map(x => ({id:+x[0], n:x[1].slice(0,60), r:x[2] ? 1 : 0})),
+          walk: Number.isFinite(+o.w) ? Math.min(20, Math.max(0, +o.w)) : cfg.walk
+        });
+        const had = store.get("bv_cfg");
+        if(!had || (shareCode(cfg) !== shareCode(next) && confirm("Vill du använda hållplatserna från länken? Dina nuvarande hållplatser ersätts."))){
+          cfg = next; saveCfg();
+        }
+      }
+    }catch(e){}
+    try{ history.replaceState(null, "", location.pathname + location.hash); }catch(e){}
+  }
+  importFromUrl();
+
+  // Inlärda restider Brommaplan → hållplats (per linje och riktning), används när turen
+  // ännu inte syns vid hållplatsen. Även vilka linjer från en hållplats som når Brommaplan.
+  let learn = {};
+  try{ learn = JSON.parse(store.get("bv_learn")) || {}; }catch(e){ learn = {}; }
+  let learnDirty = false;
+  function teach(k, v){ if(learn[k] !== v){ learn[k] = v; learnDirty = true; } }
+  function flushLearn(){ if(learnDirty){ store.set("bv_learn", JSON.stringify(learn)); learnDirty = false; } }
+
+  // ---------- SL ----------
+  const cache = {};                 // site-id → {dep, dev, tot, err}
+  const last = {ut:0, hem:0};
+  let tab = pickTab();
+  let busy = false;
 
   function pickTab(){
     const h = (location.hash || "").replace("#","");
@@ -217,23 +323,6 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     return new Date().getHours() < 12 ? "ut" : "hem";
   }
 
-  // ---------- SL ----------
-  async function siteId(stop){
-    if(stop.id) return stop.id;
-    const key = "sl_site_" + stop.q.toLowerCase();
-    const cached = parseInt(store.get(key), 10);
-    if(cached > 0) return stop.id = cached;
-    const r = await fetch(FINDER + encodeURIComponent(stop.q));
-    if(!r.ok) throw new Error("SL:s hållplatssök svarade " + r.status);
-    const j = await r.json();
-    const hits = (j.locations||[]).filter(l => l.id).map(l => ({id:parseInt(String(l.id).slice(-7),10), n:String(l.name)}));
-    const q = stop.q.toLowerCase();
-    const hit = (stop.area && hits.find(h => h.n.toLowerCase().includes(stop.area) && h.n.toLowerCase().includes(q)))
-      || hits.find(h => h.n.toLowerCase().split(", ").pop() === q) || hits[0];
-    if(!hit) throw new Error("Hittade inte hållplatsen " + stop.q);
-    store.set(key, String(hit.id));
-    return stop.id = hit.id;
-  }
   async function departures(id){
     let j = {departures:[]};
     for(let i=0; i<5; i++){            // SL svarar ibland tomt; fråga igen efter en kort paus
@@ -243,9 +332,9 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
       j = await r.json();
       if((j.departures||[]).length) break;
     }
-    const dep = (j.departures||[]).map(d => ({
+    const dep = (j.departures||[]).filter(d => !d.line || !d.line.transport_mode || d.line.transport_mode === "BUS").map(d => ({
       l: d.line ? String(d.line.designation) : "", t: d.destination || "", s: d.display || "",
-      e: d.expected || d.scheduled || "", p: d.scheduled || "",
+      e: d.expected || d.scheduled || "", p: d.scheduled || "", dir: d.direction_code || 0,
       sp: (d.stop_point && d.stop_point.designation) || "", st: d.state || "",
       j: d.journey && d.journey.id ? String(d.journey.id) : null
     }));
@@ -255,107 +344,175 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
 
   async function refresh(){
     if(busy) return;
-    const key = tab, cfg = TABS[key];
+    const t = tab;
     busy = true; setStatus("busy");
     try{
-      const real = cfg.stops.filter(s => s.reserveOf === undefined);
-      const d = await Promise.all(real.map(async s => {
-        try{ return await departures(await siteId(s)); }
-        catch(e){ return {err: e.message, dep: []}; }
+      const ids = [...new Set((t === "ut" ? cfg.ut : cfg.hem).map(s => s.id).concat(HUB.id))];
+      const res = await Promise.all(ids.map(async id => {
+        try{ return await departures(id); }
+        catch(e){ return {id, err:e.message, dep:[], tot:0}; }
       }));
-      const prev = last[key];
-      const merged = d.map((x, i) => (x.tot === 0 && !x.err && prev && prev.d[i] && prev.d[i].dep.some(upcoming)) ? prev.d[i] : x);
-      last[key] = {at: Date.now(), d: merged};
-      $("notice").hidden = !d.every(x => x.err);
-      if(d.every(x => x.err)) $("notice").textContent = "Kunde inte nå SL. Kontrollera uppkopplingen och tryck Uppdatera.";
+      res.forEach(x => {
+        const prev = cache[x.id];
+        if(x.tot === 0 && prev && prev.dep.some(upcoming)) return;   // behåll senaste svar om SL svarar tomt
+        cache[x.id] = x;
+      });
+      last[t] = Date.now();
+      const allErr = res.every(x => x.err);
+      $("notice").hidden = !allErr;
+      if(allErr) $("notice").textContent = "Kunde inte nå SL. Kontrollera uppkopplingen och tryck Uppdatera.";
     }finally{
-      busy = false; if(key === tab){ render(); } setStatus();
+      busy = false; render(); setStatus();
     }
   }
 
   function setStatus(kind){
-    const L = last[tab];
-    $("dot").className = "dot" + (kind==="busy" ? " busy" : L ? " live" : "");
+    const at = last[tab];
+    $("dot").className = "dot" + (kind==="busy" ? " busy" : at ? " live" : "");
     $("refreshBtn").disabled = kind==="busy";
-    if(kind==="busy"){ $("statusText").textContent = L ? "Uppdaterar…" : "Hämtar…"; return; }
-    if(!L){ $("statusText").textContent = "Inga avgångar hämtade"; return; }
-    const age = Math.round((Date.now()-L.at)/60000);
-    $("statusText").textContent = "Uppdaterad " + hm(new Date(L.at)) + (age>=2 ? " · "+age+" min sedan" : "");
+    if(kind==="busy"){ $("statusText").textContent = at ? "Uppdaterar…" : "Hämtar…"; return; }
+    if(!at){ $("statusText").textContent = "Inga avgångar hämtade"; return; }
+    const age = Math.round((Date.now()-at)/60000);
+    $("statusText").textContent = "Uppdaterad " + hm(new Date(at)) + (age>=2 ? " · "+age+" min sedan" : "");
+  }
+
+  // ---------- Logik ----------
+  // Utresa: bussar som når Brommaplan (slutstation där, eller samma tur avgår senare från Brommaplan).
+  function utSections(){
+    const hub = cache[HUB.id];
+    const shown = [];
+    return cfg.ut.map(s => {
+      const c = cache[s.id];
+      if(!c || c.err || c.tot === 0) return {s, c};
+      const all = c.dep.filter(upcoming).filter(d => {
+        const k = "u|" + s.id + "|" + d.l + "|" + d.dir;
+        if(/brommaplan/i.test(d.t)){ teach(k, 1); return true; }
+        if(hub && hub.dep.some(h => sameTrip(h, d) && later(h, d))){ teach(k, 1); return true; }
+        return learn[k] === 1 && minutesUntil(d.e) > 45;     // för långt fram för att synas på Brommaplan än
+      });
+      const deps = all.filter(d => !shown.some(f => d.j && f.j ? sameTrip(f, d) :
+        f.l === d.l && (new Date(d.e) - new Date(f.e)) >= 0 && (new Date(d.e) - new Date(f.e)) <= 6*60000));
+      shown.push(...all);
+      return {s, c, deps: deps.slice(0,6), dupes: all.length > 0 && deps.length === 0};
+    });
+  }
+
+  // Hemresa: bussar från Brommaplan som stannar vid någon av mina hållplatser.
+  // Ordinarie hållplatser i prioritetsordning först, sedan reservhållplatser.
+  function hemDeps(){
+    const hub = cache[HUB.id];
+    if(!hub || hub.err) return null;
+    const order = cfg.hem.filter(s => !s.r).concat(cfg.hem.filter(s => s.r));
+    const out = [];
+    hub.dep.filter(upcoming).forEach(d => {
+      if(/brommaplan/i.test(d.t)) return;
+      let hit = null;
+      for(const s of order){
+        const c = cache[s.id];
+        const m = c && d.j ? c.dep.find(x => sameTrip(x, d) && later(x, d) && new Date(x.e) - new Date(d.e) < 60*60000) : null;
+        if(m){
+          teach("h|" + s.id + "|" + d.l + "|" + d.dir, Math.round((new Date(m.e) - new Date(d.e))/60000));
+          if(!hit) hit = {s, t:new Date(m.e), live:true};
+        }
+      }
+      if(!hit){
+        for(const s of order){
+          const off = learn["h|" + s.id + "|" + d.l + "|" + d.dir];
+          if(typeof off === "number"){ hit = {s, t:new Date(new Date(d.e).getTime() + off*60000), live:false}; break; }
+        }
+      }
+      if(hit) out.push(Object.assign({}, d, {alight:hit.s, at:hit.t, live:hit.live, reserve:!!hit.s.r}));
+    });
+    return out;
+  }
+
+  function reachState(d){
+    const mg = (new Date(d.e) - Date.now())/60000, w = cfg.walk;
+    if(!w) return null;
+    return mg >= w ? {k:"walk", txt:"Hinner gå"} : mg >= w/2 ? {k:"run", txt:"Spring"} : {k:"miss", txt:"Hinner inte"};
   }
 
   // ---------- Rendera ----------
-  function reachState(d, reach){
-    const mg = (new Date(d.e) - Date.now())/60000;
-    return mg >= reach*2 ? {k:"walk", txt:"Hinner gå"} : mg >= reach ? {k:"run", txt:"Spring"} : {k:"miss", txt:"Hinner inte"};
-  }
+  function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text !== undefined) e.textContent = text; return e; }
+  const lineList = deps => [...new Set(deps.map(d => d.l))].sort((a,b) => a.localeCompare(b, "sv", {numeric:true})).join(" · ");
 
   function render(){
-    const cfg = TABS[tab], L = last[tab];
-    $("eyebrow").textContent = cfg.eyebrow;
-    $("heading").textContent = cfg.heading;
+    $("eyebrow").textContent = tab === "ut" ? "Bussar mot" : "Bussar hem från";
+    $("heading").textContent = "Brommaplan";
+    $("utSub").textContent = cfg.ut.map(s => s.n).join(" · ");
     document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.key === tab ? "true" : "false"));
     const board = $("board"); board.textContent = "";
-    if(cfg.pickup && L){
-      const h = el("p", "hint"); h.append(el("span", "", "🚗"));
-      const t = el("span"); t.append(el("b", "", "Behöver du skjuts från hållplatsen? "), document.createTextNode("Tryck på Skjuts vid bussen du tar, så skickas tid och plats i WhatsApp."));
-      h.append(t); board.appendChild(h);
-    }
     board.setAttribute("aria-labelledby", "tab-" + tab);
 
-    const firstDeps = L && L.d[0] ? L.d[0].dep.filter(cfg.keep).filter(upcoming) : [];
-    const sameTrip = d => firstDeps.some(f => {
-      if(f.j && d.j) return f.j === d.j;
-      const diff = new Date(d.e) - new Date(f.e);
-      return f.l === d.l && diff >= 0 && diff <= 6*60000;
-    });
+    if(!store.get("bv_cfg")){
+      const h = el("p", "hint"); h.style.borderLeftColor = "var(--bus)";
+      h.append(el("span", "", "⚙️"));
+      const t = el("span"); t.append(el("b", "", "Bor du någon annanstans? "), document.createTextNode("Tryck på ⚙️ och välj dina egna hållplatser."));
+      h.append(t); board.appendChild(h);
+    }
+    if(tab === "ut") renderUt(board); else renderHem(board);
+    flushLearn();
+  }
 
-    cfg.stops.forEach((s, idx) => {
-      const isReserve = s.reserveOf !== undefined;
-      const data = L ? L.d[isReserve ? s.reserveOf : idx] : null;
-      const sec = el("section", "stop" + (isReserve ? " reserve" : ""));
-      const head = el("div", "stop-head");
-      head.append(el("h2", "stop-name", s.n), el("span", "stop-meta", isReserve ? "176 · 302" : tab === "hem" ? "309 · 311 · 177" : "Ekerö"));
-      sec.appendChild(head);
+  function section(title, meta, reserve){
+    const sec = el("section", "stop" + (reserve ? " reserve" : ""));
+    const head = el("div", "stop-head");
+    head.append(el("h2", "stop-name", title), el("span", "stop-meta", meta || ""));
+    sec.appendChild(head);
+    return sec;
+  }
 
-      if(!data){ sec.appendChild(el("div", "empty", "Hämtar…")); board.appendChild(sec); return; }
-      if(data.err){ sec.appendChild(el("div", "empty", "SL svarade inte för den här hållplatsen.")); board.appendChild(sec); return; }
-      if(data.tot === 0){ sec.appendChild(el("div", "empty", "SL svarar tomt för " + (isReserve ? "Brommaplan" : s.n) + " just nu. Tryck Uppdatera om en stund.")); board.appendChild(sec); return; }
-
-      if(isReserve){
-        const nextGood = firstDeps.find(d => !cfg.reachMin || reachState(d, cfg.reachMin).k !== "miss") || null;
-        const res = data.dep.filter(cfg.keepReserve).filter(upcoming);
-        const before = (nextGood ? res.filter(d => new Date(d.e) < new Date(nextGood.e)) : res).slice(0,4);
-        if(!before.length) sec.appendChild(el("div", "empty", nextGood ? "Ingen reservlinje går före nästa ordinarie buss (" + nextGood.l + " kl " + hm(new Date(nextGood.e)) + ")." : "Inga reservlinjer de närmaste " + FORECAST_MIN + " minuterna."));
-        else { const ol = el("ol", "deps"); before.forEach(d => ol.appendChild(row(d, cfg.alight[d.l], cfg.reachMin))); sec.appendChild(ol); }
-        board.appendChild(sec); return;
-      }
-
-      const all = data.dep.filter(cfg.keep).filter(upcoming);
-      const deps = (cfg.dedupe && idx > 0 ? all.filter(d => !sameTrip(d)) : all).slice(0,6);
-      if(!deps.length){
-        const dupes = cfg.dedupe && idx > 0 && all.length > 0;
-        sec.appendChild(el("div", "empty", dupes ? "Samma bussar som från " + cfg.stops[0].n + ", ungefär en minut senare." : cfg.emptyText));
-      } else {
-        const ol = el("ol", "deps"); deps.forEach(d => ol.appendChild(row(d, null, cfg.reachMin))); sec.appendChild(ol);
-      }
-      const devs = (data.dev||[]).filter(m => !(tab === "ut" && /mot skärvik/i.test(m)));
-      if(devs.length) sec.appendChild(el("div", "devs", "⚠ " + devs.join(" · ")));
+  function renderUt(board){
+    utSections().forEach(({s, c, deps, dupes}, i) => {
+      const sec = section(s.n, deps && deps.length ? lineList(deps) : "");
+      if(!c) sec.appendChild(el("div", "empty", "Hämtar…"));
+      else if(c.err) sec.appendChild(el("div", "empty", "SL svarade inte för den här hållplatsen."));
+      else if(c.tot === 0) sec.appendChild(el("div", "empty", "SL svarar tomt för " + s.n + " just nu. Tryck Uppdatera om en stund."));
+      else if(!deps.length) sec.appendChild(el("div", "empty", dupes ? "Samma bussar som från " + cfg.ut.slice(0, i).map(x => x.n).join(" och ") + ", lite senare." : "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."));
+      else { const ol = el("ol", "deps"); deps.forEach(d => ol.appendChild(row(d, {via:true}))); sec.appendChild(ol); }
+      if(c && c.dev && c.dev.length) sec.appendChild(el("div", "devs", "⚠ " + c.dev.join(" · ")));
       board.appendChild(sec);
     });
   }
 
-  function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text !== undefined) e.textContent = text; return e; }
+  function renderHem(board){
+    const hub = cache[HUB.id];
+    const all = hemDeps();
+    if(all){
+      const h = el("p", "hint"); h.append(el("span", "", "🚗"));
+      const t = el("span"); t.append(el("b", "", "Behöver du skjuts från hållplatsen? "), document.createTextNode("Tryck på Skjuts vid bussen du tar, så skickas tid och plats i WhatsApp."));
+      h.append(t); board.appendChild(h);
+    }
+    const ord = all ? all.filter(d => !d.reserve) : [];
+    const sec = section("Brommaplan", lineList(ord));
+    if(!hub) sec.appendChild(el("div", "empty", "Hämtar…"));
+    else if(hub.err) sec.appendChild(el("div", "empty", "SL svarade inte för Brommaplan."));
+    else if(hub.tot === 0) sec.appendChild(el("div", "empty", "SL svarar tomt för Brommaplan just nu. Tryck Uppdatera om en stund."));
+    else if(!ord.length) sec.appendChild(el("div", "empty", "Inga bussar till " + cfg.hem.filter(s => !s.r).map(s => s.n).join(", ") + " de närmaste " + FORECAST_MIN + " minuterna."));
+    else { const ol = el("ol", "deps"); ord.slice(0,6).forEach(d => ol.appendChild(row(d, {ride:true}))); sec.appendChild(ol); }
+    if(hub && hub.dev && hub.dev.length) sec.appendChild(el("div", "devs", "⚠ " + hub.dev.join(" · ")));
+    board.appendChild(sec);
 
-  function row(d, alight, reach){
+    if(!cfg.hem.some(s => s.r) || !all) return;
+    const res = all.filter(d => d.reserve);
+    const rsec = section("Reservalternativ", lineList(res), true);
+    const nextGood = ord.find(d => { const r = reachState(d); return !r || r.k !== "miss"; }) || null;
+    const before = (nextGood ? res.filter(d => new Date(d.e) < new Date(nextGood.e)) : res).slice(0,4);
+    if(!before.length) rsec.appendChild(el("div", "empty", nextGood ? "Ingen reservbuss går före nästa ordinarie buss (" + nextGood.l + " kl " + hm(new Date(nextGood.e)) + ")." : "Inga reservbussar de närmaste " + FORECAST_MIN + " minuterna."));
+    else { const ol = el("ol", "deps"); before.forEach(d => ol.appendChild(row(d, {ride:true}))); rsec.appendChild(ol); }
+    board.appendChild(rsec);
+  }
+
+  function row(d, opt){
     const li = el("li", "dep");
-    const rs = reach ? reachState(d, reach) : null;
+    const rs = opt.ride ? reachState(d) : null;
     if(rs && rs.k === "miss") li.classList.add("miss");
     const dest = el("div", "dest");
     const dn = el("div", "dest-name", d.t); dn.title = d.t; dest.append(dn);
     const dm = el("div", "dest-meta");
     if(rs) dm.appendChild(el("span", "chip " + rs.k, rs.txt));
-    if(alight) dm.appendChild(el("span", "", alight));
-    if(!/brommaplan/i.test(d.t) && /mörby/i.test(d.t) && tab === "ut") dm.appendChild(el("span", "", "Via Brommaplan"));
+    if(d.alight) dm.appendChild(el("span", "arr", (d.reserve ? "Kliv av vid " : "→ ") + d.alight.n + " " + (d.live ? "" : "ca ") + hm(d.at)));
+    if(opt.via && !/brommaplan/i.test(d.t)) dm.appendChild(el("span", "", "Via Brommaplan"));
     if(d.sp) dm.appendChild(el("span", "", "Läge " + d.sp));
     const delay = (d.e && d.p) ? Math.round((new Date(d.e) - new Date(d.p))/60000) : 0;
     if(delay >= 2) dm.appendChild(el("span", "late", "+" + delay + " min sen"));
@@ -371,99 +528,168 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     t.append(mins);
     if(m !== null && m < 60 && d.e) t.append(el("div", "at", hm(new Date(d.e))));
     li.append(el("div", "badge", d.l || "–"), dest, t);
-    const cfg = TABS[tab];
-    if(cfg.pickup && cfg.pickup[d.l]){
+    if(opt.ride && d.alight){
       li.classList.add("pick"); li.tabIndex = 0; li.setAttribute("role", "button");
       const rb = el("div", "ride-btn"); rb.append(el("span", "", "🚗"), document.createTextNode("Skjuts")); rb.setAttribute("aria-hidden", "true");
       li.append(rb);
-      li.setAttribute("aria-label", "Be om skjuts från buss " + d.l + " kl " + hm(new Date(d.e)));
+      li.setAttribute("aria-label", "Be om skjuts från buss " + d.l + " kl " + hm(new Date(d.e)) + " till " + d.alight.n);
       li.onclick = () => openRide(d);
       li.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openRide(d); } };
     }
     return li;
   }
 
-  // ---------- Skjuts ----------
-  // Vem man är och mottagarens nummer sparas bara i telefonen. Meddelandet öppnas färdigskrivet i WhatsApp.
-  let ride = null;
-  const other = who => who === "Calle" ? "Sara" : "Calle";
+  // ---------- Dialoger ----------
+  function openDlg(id){ const dlg = $(id); if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", ""); }
+  function closeDlg(id){ const dlg = $(id); if(dlg.close) dlg.close(); else dlg.removeAttribute("open"); }
+  ["ride","settings"].forEach(id => $(id).addEventListener("click", e => { if(e.target === $(id)) closeDlg(id); }));
 
-  async function pickupTime(d, place){
-    const dep = new Date(d.e);
-    try{
-      if(d.j){
-        const r = await departures(await siteId(PICKUP_STOPS[place]));
-        const m = r.dep.find(x => x.j === d.j && new Date(x.e) > dep);
-        if(m && new Date(m.e) - dep < 45*60000) return {t:new Date(m.e), live:true};
-      }
-    }catch(e){}
-    return {t:new Date(dep.getTime() + RIDE_MIN*60000), live:false};
-  }
+  // ---------- Skjuts ----------
+  // Meddelandet öppnas färdigskrivet i WhatsApp. Namn och nummer sparas bara i telefonen.
+  let ride = null;
 
   function rideMessage(){
-    const me = store.get("ride_me"), p = ride.pt;
-    return "Hej " + other(me) + "! 🚌 " + me + " är på väg hem med buss " + ride.d.l + " från Brommaplan kl " + hm(new Date(ride.d.e)) +
-      ". Beräknad upphämtning " + (p.live ? "kl " : "ca kl ") + hm(p.t) + " vid " + ride.place + ".";
+    const p = ride.pt;
+    return "Hej" + (cfg.to ? " " + cfg.to : "") + "! 🚌 " + cfg.me + " är på väg hem med buss " + ride.d.l + " från Brommaplan kl " + hm(new Date(ride.d.e)) +
+      ". Beräknad upphämtning " + (p.live ? "kl " : "ca kl ") + hm(p.t) + " vid " + ride.d.alight.n + ".";
   }
 
   function renderRide(){
-    const me = store.get("ride_me"), setup = ride.setup || !me;
+    const setup = ride.setup || !cfg.me;
     const title = $("rideTitle"); title.textContent = "";
     title.append(el("span", "badge", ride.d.l), document.createTextNode("Brommaplan " + hm(new Date(ride.d.e))));
     const info = $("rideInfo"); info.textContent = "";
-    if(!ride.pt) info.textContent = "Räknar ut när bussen är vid " + ride.place + "…";
-    else {
-      info.append(document.createTextNode("Upphämtning vid " + ride.place + " " + (ride.pt.live ? "kl " : "ca kl ")));
-      info.append(el("span", "ride-time", hm(ride.pt.t)));
-      if(!ride.pt.live) info.append(document.createTextNode(" (uppskattat)"));
-    }
+    info.append(document.createTextNode("Upphämtning vid " + ride.d.alight.n + " " + (ride.pt.live ? "kl " : "ca kl ")));
+    info.append(el("span", "ride-time", hm(ride.pt.t)));
+    if(!ride.pt.live) info.append(document.createTextNode(" (uppskattat)"));
     $("rideSetup").hidden = !setup;
-    document.querySelectorAll("#rideWho button").forEach(b => b.setAttribute("aria-pressed", b.dataset.who === (ride.who || me) ? "true" : "false"));
-    const w = ride.who || me;
-    $("ridePhoneLabel").textContent = "WhatsApp-nummer till " + (w ? other(w) : "den som hämtar");
     const edit = $("rideEdit");
     edit.hidden = setup;
-    if(me) edit.textContent = "Du är " + me + " · skickas till " + other(me) + " · Ändra";
-    $("rideSend").disabled = !ride.pt;
+    edit.textContent = "Från " + cfg.me + (cfg.to ? " till " + cfg.to : "") + " · Ändra";
   }
 
   function openRide(d){
-    const place = TABS.hem.pickup[d.l];
-    ride = {d, place, pt:null, setup:false, who:null};
-    $("ridePhone").value = store.get("ride_phone") || "";
+    ride = {d, setup:false, pt:{t:d.at || new Date(new Date(d.e).getTime() + RIDE_MIN*60000), live:!!d.live}};
+    $("rideMe").value = cfg.me; $("rideTo").value = cfg.to; $("ridePhone").value = cfg.phone;
     renderRide();
-    const dlg = $("ride");
-    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
-    const mine = ride;
-    pickupTime(d, place).then(pt => { if(ride === mine){ ride.pt = pt; renderRide(); } });
+    openDlg("ride");
   }
-  function closeRide(){ const dlg = $("ride"); if(dlg.close) dlg.close(); else dlg.removeAttribute("open"); ride = null; }
-
-  document.querySelectorAll("#rideWho button").forEach(b => b.onclick = () => { ride.who = b.dataset.who; renderRide(); });
   $("rideEdit").onclick = () => { ride.setup = true; renderRide(); };
-  $("rideCancel").onclick = closeRide;
-  $("ride").addEventListener("click", e => { if(e.target === $("ride")) closeRide(); });
+  $("rideCancel").onclick = () => closeDlg("ride");
   $("ride").addEventListener("close", () => { ride = null; });
+
   // 07x… → 467x… (WhatsApp vill ha landsnummer utan +)
   const waNum = v => { let n = (v || "").replace(/[^\d+]/g, ""); if(n.startsWith("+")) n = n.slice(1); else if(n.startsWith("00")) n = n.slice(2); else if(n.startsWith("0")) n = "46" + n.slice(1); return n; };
   $("rideSend").onclick = () => {
-    if(!ride || !ride.pt) return;
+    if(!ride) return;
     if(!$("rideSetup").hidden){
-      const w = ride.who || store.get("ride_me");
-      if(!w){ alertWho(); return; }
-      store.set("ride_me", w); store.set("ride_phone", $("ridePhone").value.trim());
+      const me = $("rideMe").value.trim();
+      if(!me){ $("rideMe").focus(); $("rideMe").style.outline = "2px solid var(--late)"; setTimeout(() => $("rideMe").style.outline = "", 1500); return; }
+      cfg.me = me; cfg.to = $("rideTo").value.trim(); cfg.phone = $("ridePhone").value.trim(); saveCfg();
     }
-    const num = waNum(store.get("ride_phone"));
+    const num = waNum(cfg.phone);
     const url = "whatsapp://send?" + (num ? "phone=" + num + "&" : "") + "text=" + encodeURIComponent(rideMessage());
-    closeRide();
+    closeDlg("ride");
     location.href = url;
   };
-  function alertWho(){ const s = $("rideWho"); s.style.outline = "2px solid var(--late)"; setTimeout(() => s.style.outline = "", 1500); }
+
+  // ---------- Inställningar ----------
+  let draft = null;
+
+  function renderStops(listId, key){
+    const ol = $(listId); ol.textContent = "";
+    const arr = draft[key];
+    arr.forEach((s, i) => {
+      const li = el("li", s.r ? "res" : "");
+      li.append(el("span", "num", s.r ? "R" : String(arr.slice(0, i + 1).filter(x => !x.r).length)));
+      const nm = el("span", "nm", s.n); li.append(nm);
+      const btn = (txt, label, fn, dis) => { const b = el("button", "ib", txt); b.type = "button"; b.setAttribute("aria-label", label); b.disabled = !!dis; b.onclick = fn; li.append(b); return b; };
+      if(key === "hem"){
+        const rb = btn("Reserv", "Reserv: " + s.n, () => { s.r = s.r ? 0 : 1; renderStops(listId, key); });
+        rb.classList.toggle("on", !!s.r); rb.setAttribute("aria-pressed", s.r ? "true" : "false");
+      }
+      btn("↑", "Flytta upp " + s.n, () => { arr.splice(i - 1, 0, arr.splice(i, 1)[0]); renderStops(listId, key); }, i === 0);
+      btn("↓", "Flytta ner " + s.n, () => { arr.splice(i + 1, 0, arr.splice(i, 1)[0]); renderStops(listId, key); }, i === arr.length - 1);
+      btn("✕", "Ta bort " + s.n, () => { arr.splice(i, 1); renderStops(listId, key); });
+      ol.append(li);
+    });
+    if(!arr.length) ol.append(el("li", "", "Inga hållplatser valda"));
+  }
+
+  function setupSearch(inputId, hitsId, key, listId){
+    let timer = null, seq = 0;
+    const inp = $(inputId), hits = $(hitsId);
+    inp.addEventListener("input", () => {
+      clearTimeout(timer);
+      const q = inp.value.trim();
+      if(q.length < 2){ hits.textContent = ""; return; }
+      timer = setTimeout(async () => {
+        const my = ++seq;
+        try{
+          const r = await fetch(FINDER + encodeURIComponent(q));
+          const j = await r.json();
+          if(my !== seq) return;
+          hits.textContent = "";
+          (j.locations||[]).filter(l => l.id).slice(0, 6).forEach(l => {
+            const id = parseInt(String(l.id).slice(-7), 10);
+            const short = l.disassembledName || String(l.name).split(", ").pop();
+            const li = el("li"); const b = el("button", "", String(l.name)); b.type = "button";
+            b.onclick = () => {
+              if(!draft[key].some(s => s.id === id) && draft[key].length < 8) draft[key].push({id, n:short});
+              inp.value = ""; hits.textContent = ""; renderStops(listId, key);
+            };
+            li.append(b); hits.append(li);
+          });
+          if(!hits.children.length) hits.append(el("li", "set-help", "Hittade ingen hållplats."));
+        }catch(e){ hits.textContent = ""; hits.append(el("li", "set-help", "Kunde inte söka hos SL just nu.")); }
+      }, 300);
+    });
+  }
+  setupSearch("addUt", "hitsUt", "ut", "setUt");
+  setupSearch("addHem", "hitsHem", "hem", "setHem");
+
+  function openSettings(){
+    draft = clone(cfg);
+    renderStops("setUt", "ut"); renderStops("setHem", "hem");
+    $("setWalk").value = draft.walk; $("setMe").value = draft.me; $("setTo").value = draft.to; $("setPhone").value = draft.phone;
+    ["addUt","addHem"].forEach(id => $(id).value = ""); ["hitsUt","hitsHem"].forEach(id => $(id).textContent = "");
+    $("setErr").hidden = true; $("shareMsg").hidden = true;
+    openDlg("settings");
+  }
+  function readDraft(){
+    draft.walk = Math.min(20, Math.max(0, parseInt($("setWalk").value, 10) || 0));
+    draft.me = $("setMe").value.trim(); draft.to = $("setTo").value.trim(); draft.phone = $("setPhone").value.trim();
+    if(!draft.ut.length) return "Välj minst en hållplats för utresan.";
+    if(!draft.hem.some(s => !s.r)) return "Välj minst en hållplats för hemresan som inte är reserv.";
+    return null;
+  }
+  $("settingsBtn").onclick = openSettings;
+  $("setCancel").onclick = () => closeDlg("settings");
+  $("setSave").onclick = () => {
+    const err = readDraft();
+    if(err){ $("setErr").textContent = err; $("setErr").hidden = false; return; }
+    cfg = draft; saveCfg(); closeDlg("settings");
+    render(); refresh();
+  };
+  $("shareBtn").onclick = async () => {
+    const err = readDraft();
+    if(err){ $("setErr").textContent = err; $("setErr").hidden = false; return; }
+    const url = shareUrl(draft), msg = $("shareMsg");
+    try{
+      if(navigator.share){ await navigator.share({title:"Bussvisaren", text:"Bussar till och från Brommaplan i realtid:", url}); return; }
+      await navigator.clipboard.writeText(url);
+      msg.textContent = "Länken är kopierad – klistra in den i ett meddelande."; msg.hidden = false;
+    }catch(e){
+      if(e && e.name === "AbortError") return;
+      msg.textContent = url; msg.hidden = false;
+    }
+  };
 
   // ---------- Händelser ----------
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
     tab = b.dataset.key; render(); setStatus();
-    if(!last[tab] || Date.now() - last[tab].at > 30000) refresh();
+    const missing = (tab === "ut" ? cfg.ut : cfg.hem).some(s => !cache[s.id]);
+    if(missing || !last[tab] || Date.now() - last[tab] > 30000) refresh();
   }));
   $("refreshBtn").onclick = () => refresh();
   function tick(){ $("clock").textContent = hm(new Date()); }
@@ -471,7 +697,7 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
   setInterval(() => { tick(); if(!busy && last[tab]){ render(); setStatus(); } }, 15000);
   setInterval(() => { if(!document.hidden) refresh(); }, REFRESH_MS);
   document.addEventListener("visibilitychange", () => {
-    if(!document.hidden && (!last[tab] || Date.now() - last[tab].at > 30000)){ tab = last[tab] ? tab : pickTab(); render(); refresh(); }
+    if(!document.hidden && (!last[tab] || Date.now() - last[tab] > 30000)){ if(!last[tab]) tab = pickTab(); render(); refresh(); }
   });
 
   // ---------- Självuppdatering ----------
@@ -487,8 +713,8 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
       if(css === null || js === null) return;
       const mine = [document.querySelector("style").textContent, document.querySelector("script:not([src])").text];
       if(css !== mine[0] || js !== mine[1]){
-        const last = parseInt(store.get("upd_at"), 10) || 0;
-        if(Date.now() - last < 60000) return;     // skydd mot omladdningsloop
+        const lastUpd = parseInt(store.get("upd_at"), 10) || 0;
+        if(Date.now() - lastUpd < 60000) return;     // skydd mot omladdningsloop
         store.set("upd_at", String(Date.now()));
         location.reload();
       }
