@@ -328,7 +328,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
     for(let i=0; i<5; i++){            // SL svarar ibland tomt; fråga igen efter en kort paus
       if(i) await new Promise(r => setTimeout(r, 600));
       const r = await fetch(API + id + "/departures?forecast=" + FORECAST_MIN, {cache:"no-store"});
-      if(!r.ok) throw new Error("SL svarade " + r.status);
+      if(!r.ok){ if(i < 2) continue; throw new Error("SL svarade " + r.status); }
       j = await r.json();
       if((j.departures||[]).length) break;
     }
@@ -354,7 +354,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
       }));
       res.forEach(x => {
         const prev = cache[x.id];
-        if(x.tot === 0 && prev && prev.dep.some(upcoming)) return;   // behåll senaste svar om SL svarar tomt
+        if((x.err || x.tot === 0) && prev && !prev.err && prev.dep.some(upcoming)) return;   // behåll senaste svar om SL svarar tomt eller fel
         cache[x.id] = x;
       });
       last[t] = Date.now();
