@@ -96,7 +96,8 @@ dialog#ride::backdrop{background:rgba(0,0,0,.45)}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--tab-bg);border-radius:10px;padding:4px}
 .seg button{font:inherit;font-weight:600;border:0;border-radius:7px;padding:8px;background:transparent;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-.sheet input{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.ride-done{color:var(--ok);font-weight:700}
+.ride-err{color:var(--late);font-weight:600}
 .sheet-actions{display:flex;gap:8px}
 .sheet-actions button{flex:1;padding:12px}
 .sheet-actions #rideCancel{flex:0 0 auto;padding:12px 18px}
@@ -138,14 +139,12 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     <h2 id="rideTitle"></h2>
     <p id="rideInfo"></p>
     <div id="rideSetup" hidden>
-      <span class="sheet-label">Vem åker buss?</span>
+      <span class="sheet-label">Vem är du? (sparas i den här telefonen)</span>
       <div class="seg" id="rideWho">
         <button type="button" data-who="Calle" aria-pressed="false">Calle</button>
         <button type="button" data-who="Sara" aria-pressed="false">Sara</button>
       </div>
-      <label class="sheet-label" for="ridePhone" id="ridePhoneLabel" style="margin-top:12px">Mobilnummer till den som är hemma</label>
-      <input id="ridePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="07x-xxx xx xx">
-    </div>
+</div>
     <button type="button" class="linkbtn" id="rideEdit" hidden></button>
     <div class="sheet-actions">
       <button type="button" class="act" id="rideCancel">Avbryt</button>
@@ -194,6 +193,8 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     "Träkvista idrottsplats": {n:"Träkvista idrottsplats", q:"Träkvista idrottsplats", area:"ekerö"}
   };
   const RIDE_MIN = 13;
+  // Homey: flödet "🚌 Skjuts från Brommaplan" skickar taggen som push-notis till mottagaren.
+  const HOOK = "https://webhook.homey.app/694fa26bfe905fe2249fdb9c/";
 
   const $ = id => document.getElementById(id);
   const last = {ut:null, hem:null};
@@ -373,7 +374,7 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
   }
 
   // ---------- Skjuts ----------
-  // Inställningarna (vem man är, numret till den som är hemma) sparas bara på den här telefonen.
+  // Vem man är sparas i telefonen; notisen går via Homey till den andra.
   let ride = null;
   const other = who => who === "Calle" ? "Sara" : "Calle";
 
@@ -391,7 +392,7 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
 
   function rideMessage(){
     const me = store.get("ride_me"), p = ride.pt;
-    return "Hej " + other(me) + "! " + me + " är på väg hem med buss " + ride.d.l + " från Brommaplan kl " + hm(new Date(ride.d.e)) +
+    return "🚌 " + me + " är på väg hem med buss " + ride.d.l + " från Brommaplan kl " + hm(new Date(ride.d.e)) +
       ". Beräknad upphämtning " + (p.live ? "kl " : "ca kl ") + hm(p.t) + " vid " + ride.place + ".";
   }
 
@@ -406,20 +407,18 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
       info.append(el("span", "ride-time", hm(ride.pt.t)));
       if(!ride.pt.live) info.append(document.createTextNode(" (uppskattat)"));
     }
+    if(ride.sent) info.append(el("p", ride.sent === "ok" ? "ride-done" : "ride-err", ride.sent === "ok" ? "✓ Skickat till " + other(me) : "Kunde inte nå Homey – försök igen"));
     $("rideSetup").hidden = !setup;
     document.querySelectorAll("#rideWho button").forEach(b => b.setAttribute("aria-pressed", b.dataset.who === (ride.who || me) ? "true" : "false"));
-    const w = ride.who || me;
-    $("ridePhoneLabel").textContent = w ? "Mobilnummer till " + other(w) : "Mobilnummer till den som är hemma";
     const edit = $("rideEdit");
     edit.hidden = setup;
-    if(me) edit.textContent = "Skickas från " + me + " till " + other(me) + " · Ändra";
-    $("rideSend").disabled = !ride.pt;
+    if(me) edit.textContent = "Du är " + me + " · notisen går till " + other(me) + " · Ändra";
+    $("rideSend").disabled = !ride.pt || ride.sending || ride.sent === "ok";
   }
 
   function openRide(d){
     const place = TABS.hem.pickup[d.l];
-    ride = {d, place, pt:null, setup:false, who:null};
-    $("ridePhone").value = store.get("ride_phone") || "";
+    ride = {d, place, pt:null, setup:false, who:null, sent:null, sending:false};
     renderRide();
     const dlg = $("ride");
     if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
@@ -438,16 +437,16 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     if(!$("rideSetup").hidden){
       const w = ride.who || store.get("ride_me");
       if(!w){ alertWho(); return; }
-      store.set("ride_me", w);
-      store.set("ride_phone", $("ridePhone").value.trim());
+      store.set("ride_me", w); ride.setup = false; ride.who = null;
     }
-    const msg = rideMessage(), num = (store.get("ride_phone") || "").replace(/[^\d+]/g, "");
-    if(!num && navigator.share){
-      try{ await navigator.share({text: msg}); closeRide(); }catch(e){}
-      return;
-    }
-    location.href = "sms:" + num + "?&body=" + encodeURIComponent(msg);
-    closeRide();
+    const r = ride, to = other(store.get("ride_me")).toLowerCase();
+    r.sending = true; renderRide();
+    try{
+      await fetch(HOOK + "skjuts_till_" + to + "?tag=" + encodeURIComponent(rideMessage()), {mode:"no-cors", cache:"no-store"});
+      r.sent = "ok";
+    }catch(e){ r.sent = "err"; }
+    r.sending = false;
+    if(ride === r){ renderRide(); if(r.sent === "ok") setTimeout(() => { if(ride === r) closeRide(); }, 2500); }
   };
   function alertWho(){ const s = $("rideWho"); s.style.outline = "2px solid var(--late)"; setTimeout(() => s.style.outline = "", 1500); }
 
