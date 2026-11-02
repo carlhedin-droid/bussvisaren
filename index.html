@@ -244,9 +244,10 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
   const RIDE_MIN = 13;          // reservgissning för restid Brommaplan → hållplats
 
   // Förval: hållplatserna runt Sandudden/Träkvista. Var och en kan ändra under ⚙️.
+  // Den som redan har sparade inställningar påverkas inte om förvalet ändras.
   const DEFAULT = {
-    ut:  [{n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}, {n:"Träkvista idrottsplats", id:3069}],
-    hem: [{n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}, {n:"Träkvista idrottsplats", id:3069}, {n:"Ekvägen", id:3047, r:1}],
+    ut:  [{n:"Sandudden", id:3080}, {n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}, {n:"Träkvista idrottsplats", id:3069}],
+    hem: [{n:"Sandudden", id:3080}, {n:"Sanduddens vägskäl", id:3081}, {n:"Träkvista", id:3065}, {n:"Träkvista idrottsplats", id:3069}, {n:"Ekvägen", id:3047, r:1}],
     walk: 4, me: "", to: "", phone: ""
   };
 
@@ -271,6 +272,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
       c = clone(DEFAULT);
       const me = store.get("ride_me");             // från tidigare version
       if(me){
+        c.ut = c.ut.filter(x => x.id !== 3080); c.hem = c.hem.filter(x => x.id !== 3080);
         c.me = me; c.to = me === "Calle" ? "Sara" : me === "Sara" ? "Calle" : ""; c.phone = store.get("ride_phone") || "";
         store.set("bv_cfg", JSON.stringify(c));
       }
@@ -285,7 +287,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
   const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))));
   const shareCode = c => b64e(JSON.stringify({u:c.ut.map(s => [s.id, s.n]), h:c.hem.map(s => s.r ? [s.id, s.n, 1] : [s.id, s.n]), w:c.walk}));
-  const shareUrl = c => location.origin + location.pathname + "?s=" + shareCode(c);
+  const shareUrl = c => location.origin + location.pathname + (shareCode(c) === shareCode(DEFAULT) ? "" : "?s=" + shareCode(c));
 
   function importFromUrl(){
     const code = new URLSearchParams(location.search).get("s");
