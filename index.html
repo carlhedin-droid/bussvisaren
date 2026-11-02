@@ -127,6 +127,8 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
 .set-ok{color:var(--ok);font-weight:600}
 .sheet input[type=number]{width:6rem}
 .arr{color:var(--ink)}
+.wlab{display:flex;align-items:center;gap:3px;font-size:.75rem;color:var(--muted)}
+.stoplist input.wmin{width:3rem;padding:5px 4px;text-align:center;font-size:.875rem}
 </style>
 </head>
 <body>
@@ -186,7 +188,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
 
     <section class="set-sec">
       <span class="sheet-label">Utresa – hållplatser du åker från</span>
-      <p class="set-help">I prioritetsordning. En buss som stannar vid flera visas bara vid den första.</p>
+      <p class="set-help">I prioritetsordning. En buss som stannar vid flera visas bara vid den första. Fyll i gångtid hemifrån (min) så visar appen när du ska gå.</p>
       <ol class="stoplist" id="setUt"></ol>
       <div><input id="addUt" type="search" placeholder="Lägg till hållplats…" autocomplete="off"><ul class="hits" id="hitsUt"></ul></div>
     </section>
@@ -289,7 +291,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
       const ok = a => Array.isArray(a) && a.length > 0 && a.length <= 8 && a.every(x => Array.isArray(x) && +x[0] > 0 && typeof x[1] === "string");
       if(ok(o.u) && ok(o.h) && o.h.some(x => !x[2])){
         const next = Object.assign(clone(cfg), {
-          ut: o.u.map(x => ({id:+x[0], n:x[1].slice(0,60)})),
+          ut: o.u.map(x => { const old = cfg.ut.find(s => s.id === +x[0]); return {id:+x[0], n:x[1].slice(0,60), w:old && old.w ? old.w : 0}; }),
           hem: o.h.map(x => ({id:+x[0], n:x[1].slice(0,60), r:x[2] ? 1 : 0})),
           walk: Number.isFinite(+o.w) ? Math.min(20, Math.max(0, +o.w)) : cfg.walk
         });
@@ -393,8 +395,20 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
       const deps = all.filter(d => !shown.some(f => d.j && f.j ? sameTrip(f, d) :
         f.l === d.l && (new Date(d.e) - new Date(f.e)) >= 0 && (new Date(d.e) - new Date(f.e)) <= 6*60000));
       shown.push(...all);
-      return {s, c, deps: deps.slice(0,6), dupes: all.length > 0 && deps.length === 0};
+      return {s, c, deps: deps.map(d => Object.assign({}, d, {from:s}))};
     });
+  }
+
+  // Gångtid hemifrån till hållplatsen → när man måste gå.
+  function leaveState(d){
+    const w = +d.from.w;
+    if(!w) return null;
+    const left = (new Date(d.e) - Date.now())/60000 - w;        // minuter kvar innan man måste gå
+    const leaveAt = new Date(new Date(d.e).getTime() - w*60000);
+    if(left > 1) return {k:"walk", txt:"Gå " + hm(leaveAt)};
+    if(left > -0.5) return {k:"run", txt:"Gå nu"};
+    if(left > -w/2) return {k:"run", txt:"Spring"};
+    return {k:"miss", txt:"Hinner inte"};
   }
 
   // Hemresa: bussar från Brommaplan som stannar vid någon av mina hållplatser.
@@ -463,16 +477,24 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
   }
 
   function renderUt(board){
-    utSections().forEach(({s, c, deps, dupes}, i) => {
-      const sec = section(s.n, deps && deps.length ? lineList(deps) : "");
-      if(!c) sec.appendChild(el("div", "empty", "Hämtar…"));
-      else if(c.err) sec.appendChild(el("div", "empty", "SL svarade inte för den här hållplatsen."));
-      else if(c.tot === 0) sec.appendChild(el("div", "empty", "SL svarar tomt för " + s.n + " just nu. Tryck Uppdatera om en stund."));
-      else if(!deps.length) sec.appendChild(el("div", "empty", dupes ? (i === 1 ? "Samma bussar som från " + cfg.ut[0].n + ", lite senare." : "Samma bussar som från hållplatserna ovan, lite senare.") : "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."));
-      else { const ol = el("ol", "deps"); deps.forEach(d => ol.appendChild(row(d, {via:true}))); sec.appendChild(ol); }
-      if(c && c.dev && c.dev.length) sec.appendChild(el("div", "devs", "⚠ " + c.dev.join(" · ")));
-      board.appendChild(sec);
-    });
+    const secs = utSections();
+    const deps = secs.flatMap(x => x.deps || []).sort((a, b) => new Date(a.e) - new Date(b.e));
+    if(!cfg.ut.some(x => +x.w)){
+      const h = el("p", "hint"); h.style.borderLeftColor = "var(--accent)"; h.append(el("span", "", "🚶"));
+      const t = el("span"); t.append(el("b", "", "Vill du veta när du ska gå? "), document.createTextNode("Fyll i gångtid till hållplatserna under ⚙️."));
+      h.append(t); board.appendChild(h);
+    }
+    const sec = section("Nästa bussar", lineList(deps));
+    const loading = secs.some(x => !x.c), failed = secs.filter(x => x.c && x.c.err);
+    if(!deps.length){
+      sec.appendChild(el("div", "empty", loading ? "Hämtar…" : failed.length === secs.length ? "SL svarade inte. Tryck Uppdatera om en stund." : "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."));
+    } else {
+      const ol = el("ol", "deps"); deps.slice(0, 8).forEach(d => ol.appendChild(row(d, {via:true}))); sec.appendChild(ol);
+    }
+    if(failed.length && failed.length < secs.length) sec.appendChild(el("div", "devs", "SL svarade inte för " + failed.map(x => x.s.n).join(", ") + "."));
+    const devs = [...new Set(secs.flatMap(x => (x.c && x.c.dev) || []))].slice(0, 3);
+    if(devs.length) sec.appendChild(el("div", "devs", "⚠ " + devs.join(" · ")));
+    board.appendChild(sec);
   }
 
   function renderHem(board){
@@ -505,14 +527,15 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
 
   function row(d, opt){
     const li = el("li", "dep");
-    const rs = opt.ride ? reachState(d) : null;
+    const rs = opt.ride ? reachState(d) : d.from ? leaveState(d) : null;
     if(rs && rs.k === "miss") li.classList.add("miss");
     const dest = el("div", "dest");
     const dn = el("div", "dest-name", d.t); dn.title = d.t; dest.append(dn);
     const dm = el("div", "dest-meta");
     if(rs) dm.appendChild(el("span", "chip " + rs.k, rs.txt));
     if(d.alight) dm.appendChild(el("span", "arr", (d.reserve ? "Kliv av vid " : "→ ") + d.alight.n + " " + (d.live ? "" : "ca ") + hm(d.at)));
-    if(opt.via && !/brommaplan/i.test(d.t)) dm.appendChild(el("span", "", "Via Brommaplan"));
+    if(d.from) dm.appendChild(el("span", "arr", "från " + d.from.n));
+    if(opt.via && !/brommaplan/i.test(d.t)) dm.appendChild(el("span", "", "via Brommaplan"));
     if(d.sp) dm.appendChild(el("span", "", "Läge " + d.sp));
     const delay = (d.e && d.p) ? Math.round((new Date(d.e) - new Date(d.p))/60000) : 0;
     if(delay >= 2) dm.appendChild(el("span", "late", "+" + delay + " min sen"));
@@ -603,6 +626,12 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
       const li = el("li", s.r ? "res" : "");
       li.append(el("span", "num", s.r ? "R" : String(arr.slice(0, i + 1).filter(x => !x.r).length)));
       const nm = el("span", "nm", s.n); li.append(nm);
+      if(key === "ut"){
+        const w = el("input", "wmin"); w.type = "number"; w.min = "0"; w.max = "30"; w.inputMode = "numeric"; w.placeholder = "–";
+        w.value = s.w ? String(s.w) : ""; w.setAttribute("aria-label", "Gångtid hemifrån till " + s.n + " i minuter");
+        w.oninput = () => { const v = parseInt(w.value, 10); s.w = v > 0 ? Math.min(30, v) : 0; };
+        const wl = el("label", "wlab"); wl.append(w, document.createTextNode("min")); li.append(wl);
+      }
       const btn = (txt, label, fn, dis) => { const b = el("button", "ib", txt); b.type = "button"; b.setAttribute("aria-label", label); b.disabled = !!dis; b.onclick = fn; li.append(b); return b; };
       if(key === "hem"){
         const rb = btn("Reserv", "Reserv: " + s.n, () => { s.r = s.r ? 0 : 1; renderStops(listId, key); });

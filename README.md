@@ -2,7 +2,7 @@
 
 Avgångstavla för bussarna mellan hållplatserna kring Sandudden/Träkvista (Ekerö) och Brommaplan. Kan delas med grannar – var och en väljer sina hållplatser.
 
-- **Till Brommaplan:** avgångar från ens utresehållplatser i prioritetsordning. Bussar som har Brommaplan som slutstation eller går via Brommaplan (samma tur avgår senare därifrån) visas. En buss som stannar vid flera hållplatser visas bara vid den första.
+- **Till Brommaplan:** en gemensam lista i tidsordning med avgångar från ens utresehållplatser, med etikett "från …". Bussar som har Brommaplan som slutstation eller går via Brommaplan (samma tur avgår senare därifrån) visas. En buss som stannar vid flera hållplatser visas vid den första i prioritetsordning. Med gångtid hemifrån per hållplats (inställning) visas "Gå HH:MM", "Gå nu", "Spring" eller "Hinner inte". Gångtiderna följer inte med i delningslänken.
 - **Hem från Brommaplan:** bussar som stannar vid någon av ens hemresehållplatser. Bussen visas med den första hållplatsen i prioritetsordning som den passerar, och ankomsttiden dit. Hållplatser markerade som reserv visas under "Reservalternativ". Vilka linjer som gäller räknas ut från SL:s realtidsdata (samma linje och tur-id vid Brommaplan och vid hållplatsen); restiderna lärs in för turer som ligger för långt fram.
 - **Hinner gå / Spring / Hinner inte:** utgår från gångtiden från tunnelbanan till bussen på Brommaplan (inställning, förval 4 min; springa = halva tiden).
 - **Skjuts:** tryck på Skjuts vid en avgång hem. WhatsApp öppnas med ett färdigt meddelande med linje, avgångstid och upphämtningstid vid hållplatsen man kliver av vid.
