@@ -84,7 +84,11 @@ footer a{color:inherit}
 .dep.pick{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .dep.pick:hover,.dep.pick:active{background:var(--tab-bg)}
 .dep.pick:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.hint{margin:0;color:var(--muted);font-size:.875rem;text-align:center}
+.hint{margin:0;background:var(--surface);border:1px solid var(--line);border-left:4px solid #25D366;border-radius:10px;padding:10px 14px;font-size:.875rem;display:flex;gap:10px;align-items:center}
+.hint b{font-weight:800}
+.dep.pick{grid-template-columns:3.25rem minmax(0,1fr) auto auto}
+.ride-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:3.25rem;padding:5px 6px 3px;border-radius:8px;border:1px solid #25D366;color:var(--ink);font-size:.6875rem;font-weight:700;line-height:1.1}
+.ride-btn span{font-size:1.125rem;line-height:1}
 dialog#ride{border:0;padding:0;background:transparent;color:var(--ink);width:100%;max-width:640px;margin:auto auto 0;max-height:90vh}
 dialog#ride::backdrop{background:rgba(0,0,0,.45)}
 .sheet{background:var(--surface);border-radius:16px 16px 0 0;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
@@ -291,7 +295,11 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     $("heading").textContent = cfg.heading;
     document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.key === tab ? "true" : "false"));
     const board = $("board"); board.textContent = "";
-    if(cfg.pickup && L) board.appendChild(el("p", "hint", "Tryck på en avgång för att be om skjuts"));
+    if(cfg.pickup && L){
+      const h = el("p", "hint"); h.append(el("span", "", "🚗"));
+      const t = el("span"); t.append(el("b", "", "Behöver du skjuts från hållplatsen? "), document.createTextNode("Tryck på Skjuts vid bussen du tar, så skickas tid och plats i WhatsApp."));
+      h.append(t); board.appendChild(h);
+    }
     board.setAttribute("aria-labelledby", "tab-" + tab);
 
     const firstDeps = L && L.d[0] ? L.d[0].dep.filter(cfg.keep).filter(upcoming) : [];
@@ -366,6 +374,8 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     const cfg = TABS[tab];
     if(cfg.pickup && cfg.pickup[d.l]){
       li.classList.add("pick"); li.tabIndex = 0; li.setAttribute("role", "button");
+      const rb = el("div", "ride-btn"); rb.append(el("span", "", "🚗"), document.createTextNode("Skjuts")); rb.setAttribute("aria-hidden", "true");
+      li.append(rb);
       li.setAttribute("aria-label", "Be om skjuts från buss " + d.l + " kl " + hm(new Date(d.e)));
       li.onclick = () => openRide(d);
       li.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openRide(d); } };
