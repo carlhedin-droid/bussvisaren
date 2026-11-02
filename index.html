@@ -81,6 +81,27 @@ ol.deps{list-style:none;margin:0;padding:0}
 .devs{padding:10px 16px;border-top:1px solid var(--line);font-size:.875rem;color:var(--muted)}
 footer{color:var(--muted);font-size:.8125rem;text-align:center}
 footer a{color:inherit}
+.dep.pick{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dep.pick:hover,.dep.pick:active{background:var(--tab-bg)}
+.dep.pick:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.hint{margin:0;color:var(--muted);font-size:.875rem;text-align:center}
+dialog#ride{border:0;padding:0;background:transparent;color:var(--ink);width:100%;max-width:640px;margin:auto auto 0;max-height:90vh}
+dialog#ride::backdrop{background:rgba(0,0,0,.45)}
+.sheet{background:var(--surface);border-radius:16px 16px 0 0;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.sheet h2{margin:0;font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.sheet h2 .badge{padding:3px 8px 1px}
+.sheet p{margin:0}
+.ride-time{font-family:var(--f-mono);font-weight:700}
+.sheet-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:6px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--tab-bg);border-radius:10px;padding:4px}
+.seg button{font:inherit;font-weight:600;border:0;border-radius:7px;padding:8px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sheet input{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.sheet-actions{display:flex;gap:8px}
+.sheet-actions button{flex:1;padding:12px}
+.sheet-actions #rideCancel{flex:0 0 auto;padding:12px 18px}
+button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;border:0;border-radius:8px;cursor:pointer}
+.linkbtn{font:inherit;font-size:.875rem;color:var(--muted);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer;align-self:flex-start}
 </style>
 </head>
 <body>
@@ -112,6 +133,27 @@ footer a{color:inherit}
   <footer>Realtid från SL via <a href="https://www.trafiklab.se/" target="_blank" rel="noopener">Trafiklab</a>. Uppdateras varje minut medan sidan är öppen.</footer>
 </div>
 
+<dialog id="ride" aria-labelledby="rideTitle">
+  <div class="sheet">
+    <h2 id="rideTitle"></h2>
+    <p id="rideInfo"></p>
+    <div id="rideSetup" hidden>
+      <span class="sheet-label">Vem åker buss?</span>
+      <div class="seg" id="rideWho">
+        <button type="button" data-who="Calle" aria-pressed="false">Calle</button>
+        <button type="button" data-who="Sara" aria-pressed="false">Sara</button>
+      </div>
+      <label class="sheet-label" for="ridePhone" id="ridePhoneLabel" style="margin-top:12px">Mobilnummer till den som är hemma</label>
+      <input id="ridePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="07x-xxx xx xx">
+    </div>
+    <button type="button" class="linkbtn" id="rideEdit" hidden></button>
+    <div class="sheet-actions">
+      <button type="button" class="act" id="rideCancel">Avbryt</button>
+      <button type="button" class="primary" id="rideSend">🚗 Jag vill ha skjuts</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
 (function(){
   const API = "https://transport.integration.sl.se/v1/sites/";
@@ -138,9 +180,20 @@ footer a{color:inherit}
       // Utgångspunkt: man står vid tunnelbanedörren när tåget rullar in på Brommaplan.
       // Springa till bussen tar ca 2 min, gå ca dubbelt så lång tid.
       reachMin: 2,
+      // Skjuts: var bussåkaren kliver av, per linje.
+      pickup: {"309":"Träkvista", "311":"Träkvista", "177":"Träkvista", "176":"Ekvägen", "302":"Träkvista idrottsplats"},
       emptyText: "Inga avgångar med 309, 311 eller 177 de närmaste " + FORECAST_MIN + " minuterna."
     }
   };
+
+  // Hållplatser där man blir hämtad. Ankomsttiden hämtas live genom att leta upp samma tur där;
+  // annars uppskattas den med RIDE_MIN minuter från Brommaplan.
+  const PICKUP_STOPS = {
+    "Träkvista": {n:"Träkvista", id:3065},
+    "Ekvägen": {n:"Ekvägen", q:"Ekvägen", area:"ekerö"},
+    "Träkvista idrottsplats": {n:"Träkvista idrottsplats", q:"Träkvista idrottsplats", area:"ekerö"}
+  };
+  const RIDE_MIN = 13;
 
   const $ = id => document.getElementById(id);
   const last = {ut:null, hem:null};
@@ -169,7 +222,9 @@ footer a{color:inherit}
     if(!r.ok) throw new Error("SL:s hållplatssök svarade " + r.status);
     const j = await r.json();
     const hits = (j.locations||[]).filter(l => l.id).map(l => ({id:parseInt(String(l.id).slice(-7),10), n:String(l.name)}));
-    const hit = hits.find(h => h.n.toLowerCase().split(", ").pop() === stop.q.toLowerCase()) || hits[0];
+    const q = stop.q.toLowerCase();
+    const hit = (stop.area && hits.find(h => h.n.toLowerCase().includes(stop.area) && h.n.toLowerCase().includes(q)))
+      || hits.find(h => h.n.toLowerCase().split(", ").pop() === q) || hits[0];
     if(!hit) throw new Error("Hittade inte hållplatsen " + stop.q);
     store.set(key, String(hit.id));
     return stop.id = hit.id;
@@ -235,6 +290,7 @@ footer a{color:inherit}
     $("heading").textContent = cfg.heading;
     document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.key === tab ? "true" : "false"));
     const board = $("board"); board.textContent = "";
+    if(cfg.pickup && L) board.appendChild(el("p", "hint", "Tryck på en avgång för att be om skjuts"));
     board.setAttribute("aria-labelledby", "tab-" + tab);
 
     const firstDeps = L && L.d[0] ? L.d[0].dep.filter(cfg.keep).filter(upcoming) : [];
@@ -306,8 +362,94 @@ footer a{color:inherit}
     t.append(mins);
     if(m !== null && m < 60 && d.e) t.append(el("div", "at", hm(new Date(d.e))));
     li.append(el("div", "badge", d.l || "–"), dest, t);
+    const cfg = TABS[tab];
+    if(cfg.pickup && cfg.pickup[d.l]){
+      li.classList.add("pick"); li.tabIndex = 0; li.setAttribute("role", "button");
+      li.setAttribute("aria-label", "Be om skjuts från buss " + d.l + " kl " + hm(new Date(d.e)));
+      li.onclick = () => openRide(d);
+      li.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openRide(d); } };
+    }
     return li;
   }
+
+  // ---------- Skjuts ----------
+  // Inställningarna (vem man är, numret till den som är hemma) sparas bara på den här telefonen.
+  let ride = null;
+  const other = who => who === "Calle" ? "Sara" : "Calle";
+
+  async function pickupTime(d, place){
+    const dep = new Date(d.e);
+    try{
+      if(d.j){
+        const r = await departures(await siteId(PICKUP_STOPS[place]));
+        const m = r.dep.find(x => x.j === d.j && new Date(x.e) > dep);
+        if(m && new Date(m.e) - dep < 45*60000) return {t:new Date(m.e), live:true};
+      }
+    }catch(e){}
+    return {t:new Date(dep.getTime() + RIDE_MIN*60000), live:false};
+  }
+
+  function rideMessage(){
+    const me = store.get("ride_me"), p = ride.pt;
+    return "Hej " + other(me) + "! " + me + " är på väg hem med buss " + ride.d.l + " från Brommaplan kl " + hm(new Date(ride.d.e)) +
+      ". Beräknad upphämtning " + (p.live ? "kl " : "ca kl ") + hm(p.t) + " vid " + ride.place + ".";
+  }
+
+  function renderRide(){
+    const me = store.get("ride_me"), setup = ride.setup || !me;
+    const title = $("rideTitle"); title.textContent = "";
+    title.append(el("span", "badge", ride.d.l), document.createTextNode("Brommaplan " + hm(new Date(ride.d.e))));
+    const info = $("rideInfo"); info.textContent = "";
+    if(!ride.pt) info.textContent = "Räknar ut när bussen är vid " + ride.place + "…";
+    else {
+      info.append(document.createTextNode("Upphämtning vid " + ride.place + " " + (ride.pt.live ? "kl " : "ca kl ")));
+      info.append(el("span", "ride-time", hm(ride.pt.t)));
+      if(!ride.pt.live) info.append(document.createTextNode(" (uppskattat)"));
+    }
+    $("rideSetup").hidden = !setup;
+    document.querySelectorAll("#rideWho button").forEach(b => b.setAttribute("aria-pressed", b.dataset.who === (ride.who || me) ? "true" : "false"));
+    const w = ride.who || me;
+    $("ridePhoneLabel").textContent = w ? "Mobilnummer till " + other(w) : "Mobilnummer till den som är hemma";
+    const edit = $("rideEdit");
+    edit.hidden = setup;
+    if(me) edit.textContent = "Skickas från " + me + " till " + other(me) + " · Ändra";
+    $("rideSend").disabled = !ride.pt;
+  }
+
+  function openRide(d){
+    const place = TABS.hem.pickup[d.l];
+    ride = {d, place, pt:null, setup:false, who:null};
+    $("ridePhone").value = store.get("ride_phone") || "";
+    renderRide();
+    const dlg = $("ride");
+    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+    const mine = ride;
+    pickupTime(d, place).then(pt => { if(ride === mine){ ride.pt = pt; renderRide(); } });
+  }
+  function closeRide(){ const dlg = $("ride"); if(dlg.close) dlg.close(); else dlg.removeAttribute("open"); ride = null; }
+
+  document.querySelectorAll("#rideWho button").forEach(b => b.onclick = () => { ride.who = b.dataset.who; renderRide(); });
+  $("rideEdit").onclick = () => { ride.setup = true; renderRide(); };
+  $("rideCancel").onclick = closeRide;
+  $("ride").addEventListener("click", e => { if(e.target === $("ride")) closeRide(); });
+  $("ride").addEventListener("close", () => { ride = null; });
+  $("rideSend").onclick = async () => {
+    if(!ride || !ride.pt) return;
+    if(!$("rideSetup").hidden){
+      const w = ride.who || store.get("ride_me");
+      if(!w){ alertWho(); return; }
+      store.set("ride_me", w);
+      store.set("ride_phone", $("ridePhone").value.trim());
+    }
+    const msg = rideMessage(), num = (store.get("ride_phone") || "").replace(/[^\d+]/g, "");
+    if(!num && navigator.share){
+      try{ await navigator.share({text: msg}); closeRide(); }catch(e){}
+      return;
+    }
+    location.href = "sms:" + num + "?&body=" + encodeURIComponent(msg);
+    closeRide();
+  };
+  function alertWho(){ const s = $("rideWho"); s.style.outline = "2px solid var(--late)"; setTimeout(() => s.style.outline = "", 1500); }
 
   // ---------- Händelser ----------
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
