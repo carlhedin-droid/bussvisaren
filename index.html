@@ -474,6 +474,29 @@ button.primary{font:inherit;font-weight:800;background:var(--ok);color:#fff;bord
     if(!document.hidden && (!last[tab] || Date.now() - last[tab].at > 30000)){ tab = last[tab] ? tab : pickTab(); render(); refresh(); }
   });
 
+  // ---------- Självuppdatering ----------
+  // Telefoner (särskilt ikoner på hemskärmen) kan visa en sparad gammal version.
+  // Hämta sidan förbi cachen och ladda om om stil eller kod har ändrats.
+  async function checkUpdate(){
+    try{
+      const r = await fetch(location.pathname + "?u=" + Date.now(), {cache:"no-store"});
+      if(!r.ok) return;
+      const html = await r.text();
+      const pick = (src, tag) => { const m = src.match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">")); return m ? m[1] : null; };
+      const css = pick(html, "style"), js = pick(html, "script");
+      if(css === null || js === null) return;
+      const mine = [document.querySelector("style").textContent, document.querySelector("script:not([src])").text];
+      if(css !== mine[0] || js !== mine[1]){
+        const last = parseInt(store.get("upd_at"), 10) || 0;
+        if(Date.now() - last < 60000) return;     // skydd mot omladdningsloop
+        store.set("upd_at", String(Date.now()));
+        location.reload();
+      }
+    }catch(e){}
+  }
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) checkUpdate(); });
+  setTimeout(checkUpdate, 3000);
+
   render(); refresh();
 })();
 </script>
