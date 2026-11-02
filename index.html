@@ -468,7 +468,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
       if(!c) sec.appendChild(el("div", "empty", "Hämtar…"));
       else if(c.err) sec.appendChild(el("div", "empty", "SL svarade inte för den här hållplatsen."));
       else if(c.tot === 0) sec.appendChild(el("div", "empty", "SL svarar tomt för " + s.n + " just nu. Tryck Uppdatera om en stund."));
-      else if(!deps.length) sec.appendChild(el("div", "empty", dupes ? "Samma bussar som från " + cfg.ut.slice(0, i).map(x => x.n).join(" och ") + ", lite senare." : "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."));
+      else if(!deps.length) sec.appendChild(el("div", "empty", dupes ? (i === 1 ? "Samma bussar som från " + cfg.ut[0].n + ", lite senare." : "Samma bussar som från hållplatserna ovan, lite senare.") : "Inga bussar mot Brommaplan de närmaste " + FORECAST_MIN + " minuterna."));
       else { const ol = el("ol", "deps"); deps.forEach(d => ol.appendChild(row(d, {via:true}))); sec.appendChild(ol); }
       if(c && c.dev && c.dev.length) sec.appendChild(el("div", "devs", "⚠ " + c.dev.join(" · ")));
       board.appendChild(sec);
