@@ -1,4 +1,4 @@
-# Ridebuddy
+# Busbuddy
 
 Avgångstavla för bussarna mellan hållplatserna kring Sandudden/Träkvista (Ekerö) och Brommaplan. Kan delas med grannar – var och en väljer sina hållplatser.
 

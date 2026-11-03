@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Ridebuddy</title>
+<title>Busbuddy</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Ridebuddy">
+<meta name="apple-mobile-web-app-title" content="Busbuddy">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
@@ -221,7 +221,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
 
     <section class="set-sec">
       <span class="sheet-label">Dela med en granne</span>
-      <p class="set-help">Skickar en länk som öppnar Ridebuddy med samma hållplatser. Namn och nummer följer inte med.</p>
+      <p class="set-help">Skickar en länk som öppnar Busbuddy med samma hållplatser. Namn och nummer följer inte med.</p>
       <button type="button" class="act" id="shareBtn">🔗 Dela länk med mina hållplatser</button>
       <p id="shareMsg" class="set-ok" hidden></p>
     </section>
@@ -725,7 +725,7 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
     if(err){ $("setErr").textContent = err; $("setErr").hidden = false; return; }
     const url = shareUrl(draft), msg = $("shareMsg");
     try{
-      if(navigator.share){ await navigator.share({title:"Ridebuddy", text:"Bussar till och från Brommaplan i realtid:", url}); return; }
+      if(navigator.share){ await navigator.share({title:"Busbuddy", text:"Bussar till och från Brommaplan i realtid:", url}); return; }
       await navigator.clipboard.writeText(url);
       msg.textContent = "Länken är kopierad – klistra in den i ett meddelande."; msg.hidden = false;
     }catch(e){
