@@ -236,6 +236,31 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
 
 <script>
 (function(){
+  // Flyttad till busbuddy.pages.dev. Skicka vidare från github.io och ta med sparade
+  // inställningar i #-delen (den skickas aldrig till någon server).
+  const NEW_HOME = "https://busbuddy.pages.dev/";
+  if(/\.github\.io$/i.test(location.hostname)){
+    let carry = "";
+    try{
+      const c = localStorage.getItem("bv_cfg");
+      if(c) carry = "m=" + encodeURIComponent(c) + "&t=" + encodeURIComponent((location.hash || "").replace("#", ""));
+    }catch(e){}
+    location.replace(NEW_HOME + location.search + (carry ? "#" + carry : location.hash));
+    return;
+  }
+  if(/^#m=/.test(location.hash)){
+    try{
+      const p = new URLSearchParams(location.hash.slice(1));
+      const c = JSON.parse(p.get("m"));
+      if(c && Array.isArray(c.ut) && Array.isArray(c.hem) && !localStorage.getItem("bv_cfg")){
+        localStorage.setItem("bv_cfg", JSON.stringify(c));
+        localStorage.setItem("ride_used", "1");
+      }
+      const t = p.get("t");
+      history.replaceState(null, "", location.pathname + location.search + (t === "ut" || t === "hem" ? "#" + t : ""));
+    }catch(e){}
+  }
+
   const API = "https://transport.integration.sl.se/v1/sites/";
   const FINDER = "https://journeyplanner.integration.sl.se/v2/stop-finder?type_sf=any&any_obj_filter_sf=2&name_sf=";
   const FORECAST_MIN = 90;

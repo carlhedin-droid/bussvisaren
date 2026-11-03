@@ -13,4 +13,4 @@ Avgångstavla för bussarna mellan hållplatserna kring Sandudden/Träkvista (Ek
 Förval: utresa Sanduddens vägskäl, Träkvista, Träkvista idrottsplats; hemresa samma tre plus Ekvägen som reserv. SL-id: Sandudden 3080, Sanduddens vägskäl 3081, Träkvista 3065, Träkvista idrottsplats 3069, Ekvägen 3047, Brommaplan 9109.
 
 Data i realtid från SL:s öppna API (SL Transport, via Trafiklab). Ingen nyckel krävs.
-Publiceras med GitHub Pages från grenen `main`.
+Publiceras på https://busbuddy.pages.dev (Cloudflare Pages) från grenen `main`. Den gamla adressen carlhedin-droid.github.io/ridebuddy/ skickar vidare dit och tar med sparade inställningar.
