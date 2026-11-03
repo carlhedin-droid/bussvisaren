@@ -551,7 +551,6 @@ dialog.sheetdlg::backdrop{background:rgba(0,0,0,.45)}
     if(rs) dm.appendChild(el("span", "chip " + rs.k, rs.txt));
     if(d.alight) dm.appendChild(el("span", "arr", "→ " + (d.live ? "" : "~") + hm(d.at)));
     if(d.from && !/^brommaplan$/i.test(shortDest)) dm.appendChild(el("span", "", "mot " + shortDest));
-    if(d.sp && !d.from) dm.appendChild(el("span", "", "Läge " + d.sp));
     const delay = (d.e && d.p) ? Math.round((new Date(d.e) - new Date(d.p))/60000) : 0;
     if(delay >= 2) dm.appendChild(el("span", "late", "+" + delay + " min"));
     if(d.st === "CANCELLED") dm.appendChild(el("span", "late", "Inställd"));
